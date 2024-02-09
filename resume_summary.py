@@ -62,6 +62,8 @@ def get_openai_response(resume):
   - Don't start summary with word 'experienced'
   - Mention actual level of candidate in summary, is this candidate beginner, intermediate, experienced
   - Don't include information about languages
+  - Return response in English
+  
   Here is the resume <resume>{resume}</resume>
 
   Put your response in <response></response> tags."""
@@ -100,6 +102,7 @@ def get_openai_response_for_jd(job_description):
   - Mention general industry of the company based on description.
   - Summary info about main requirements.
   - Don't include soft skills that are listed in job description. Generate info about soft skills based on whole text.
+  - Return response in English
 
   Here is the job description <job_description>{job_description}</job_description >
 
@@ -143,7 +146,10 @@ model.eval()
 
 # JOB DESCRIPTION SUMMARY
 descr = read_file(base_path + 'jd_to_test/jd.pdf')
-descr = GoogleTranslator(source='auto', target='en').translate(descr)
+try:
+	descr = GoogleTranslator(source='auto', target='en').translate(descr)
+except:
+	pass
 jd_summary = get_openai_response_for_jd(descr)
 jd_summary = get_openai_response(jd_summary)
 start_idx = jd_summary.index('<response>') + len('<response>')

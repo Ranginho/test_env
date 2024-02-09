@@ -142,7 +142,7 @@ optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 model.eval()
 
 # JOB DESCRIPTION SUMMARY
-descr = read_file(path_to_resumes + 'jd_to_test/jd.pdf')
+descr = read_file(base_path + 'jd_to_test/jd.pdf')
 descr = GoogleTranslator(source='auto', target='en').translate(descr)
 jd_summary = get_openai_response_for_jd(descr)
 jd_summary = get_openai_response(jd_summary)
@@ -151,7 +151,7 @@ end_idx = jd_summary.index('</response>')
 jd_summary = jd_summary[start_idx:end_idx]
 
 # RESUME SUMMARY AND EVALUATION
-path_to_resumes = base_path + 'resumes_to_test'
+path_to_resumes = base_path + 'resumes_to_test/'
 for resume_name in os.listdir(path_to_resumes):
 	resume = read_file(path_to_resumes + resume_name)
 	resume = preprocess_resume(resume)

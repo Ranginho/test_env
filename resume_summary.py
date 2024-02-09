@@ -92,7 +92,10 @@ def get_resume_summary(file_path):
   return resume_summary
 
 file_path = sys.argv[1]
+api_key = sys.argv[2]
 
-openai.api_key = sys.argv[2]
+openai.api_key = api_key
+os.environ['OPENAI_API_KEY'] = api_key
+client = OpenAI()
 
 get_resume_summary(file_path)

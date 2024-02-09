@@ -5,6 +5,7 @@ import torch.optim as optim
 import torch.nn as nn
 import tika
 import os
+import torch.nn.functional as F
 import openai
 from openai import OpenAI
 from tika import parser
@@ -63,7 +64,7 @@ def get_openai_response(resume):
   - Mention actual level of candidate in summary, is this candidate beginner, intermediate, experienced
   - Don't include information about languages
   - Return response in English
-  
+
   Here is the resume <resume>{resume}</resume>
 
   Put your response in <response></response> tags."""

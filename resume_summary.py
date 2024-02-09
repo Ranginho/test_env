@@ -11,9 +11,6 @@ from tika import parser
 from deep_translator import GoogleTranslator
 import sys
 
-openai.api_key = "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"
-os.environ['OPENAI_API_KEY'] = "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"
-
 tika.initVM()
 
 def read_file(file_path):
@@ -95,5 +92,9 @@ def get_resume_summary(file_path):
   return resume_summary
 
 file_path = sys.argv[1]
+api_key = sys.argv[2]
+
+openai.api_key = api_key
+os.environ['OPENAI_API_KEY'] = api_key
 
 get_resume_summary(file_path)

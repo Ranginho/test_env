@@ -134,7 +134,7 @@ optimizer = optim.Adam([
     {'params': classifier_head.parameters()}
 ], lr=2e-5)
 
-checkpoint = torch.load(path_to_model)
+checkpoint = torch.load(base_path + 'vacancy_resume_classification_epoch_10_model.pth')
 model.load_state_dict(checkpoint['model_state_dict'])
 classifier_head.load_state_dict(checkpoint['classifier_state_dict'])
 optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

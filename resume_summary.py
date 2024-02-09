@@ -153,29 +153,29 @@ jd_summary = jd_summary[start_idx:end_idx]
 # RESUME SUMMARY AND EVALUATION
 path_to_resumes = base_path + 'resumes_to_test/'
 for resume_name in os.listdir(path_to_resumes):
-	resume = read_file(path_to_resumes + resume_name)
-	resume = preprocess_resume(resume)
-	resume = GoogleTranslator(source='auto', target='en').translate(resume)
-	summary = get_openai_response(resume)
+    resume = read_file(path_to_resumes + resume_name)
+    resume = preprocess_resume(resume)
+    resume = GoogleTranslator(source='auto', target='en').translate(resume)
+    summary = get_openai_response(resume)
     start_idx = summary.index('<response>') + len('<response>')
     end_idx = summary.index('</response>')
     summary = summary[start_idx:end_idx]
 
-	sentences = [jd_summary, summary]
+    sentences = [jd_summary, summary]
 
-	encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
+    encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
 
-	with torch.no_grad():
-	  model_output = model(**encoded_input)
+    with torch.no_grad():
+        model_output = model(**encoded_input)
 
-	sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+    sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
 
-	tensor1 = sentence_embeddings[0]
-	tensor2 = sentence_embeddings[1]
+    tensor1 = sentence_embeddings[0]
+    tensor2 = sentence_embeddings[1]
 
-	cos_sim = F.cosine_similarity(tensor1.unsqueeze(0), tensor2.unsqueeze(0), dim=1)
-	print("Resume is: ", resume_name)
-	score = cos_sim.item()*2
-	if score > 1:
-		score = 1
-	print("Score is:", score*100)
+    cos_sim = F.cosine_similarity(tensor1.unsqueeze(0), tensor2.unsqueeze(0), dim=1)
+    print("Resume is: ", resume_name)
+    score = cos_sim.item()*2
+    if score > 1:
+        score = 1
+    print("Score is:", score*100)

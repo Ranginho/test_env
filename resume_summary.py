@@ -95,4 +95,4 @@ openai.api_key = api_key
 os.environ['OPENAI_API_KEY'] = api_key
 client = OpenAI()
 
-get_resume_summary(file_path)
+print(get_resume_summary(file_path))

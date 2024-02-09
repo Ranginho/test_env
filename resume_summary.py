@@ -78,9 +78,6 @@ def get_openai_response(resume):
 
   return res
 
-
-client = OpenAI()
-
 def get_resume_summary(file_path):
   resume = read_file(file_path)
   resume = preprocess_resume(resume)

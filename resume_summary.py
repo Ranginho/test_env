@@ -88,11 +88,94 @@ def get_resume_summary(file_path):
   resume_summary = summary[start_idx:end_idx]
   return resume_summary
 
-file_path = sys.argv[1]
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0] #First element of model_output contains all token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+def get_openai_response_for_jd(job_description):
+  prompt = f"""Your goal is write a job description summary, max 50 words.
+  Here are some important rules:
+  - Don't include company name or any personal information in summary.
+  - Mention general industry of the company based on description.
+  - Summary info about main requirements.
+  - Don't include soft skills that are listed in job description. Generate info about soft skills based on whole text.
+
+  Here is the job description <job_description>{job_description}</job_description >
+
+  Put your response in <response></response> tags."""
+
+  response = client.chat.completions.create(
+            model="gpt-3.5-turbo-0125",
+            messages=[
+                {'role': 'system', 'content': 'You are an AI recruiter'},
+                {'role': 'user',
+                 'content': prompt}
+            ]
+        )
+  res = response.choices[0].message.content
+
+  return res
+
+base_path = sys.argv[1]
 api_key = sys.argv[2]
 
 openai.api_key = api_key
 os.environ['OPENAI_API_KEY'] = api_key
 client = OpenAI()
 
-print(get_resume_summary(file_path))
+tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/paraphrase-albert-small-v2')
+
+model = AutoModel.from_pretrained('sentence-transformers/paraphrase-albert-small-v2')
+classifier_head = nn.Linear(model.config.hidden_size, 2)
+
+optimizer = optim.Adam([
+    {'params': model.parameters()},
+    {'params': classifier_head.parameters()}
+], lr=2e-5)
+
+checkpoint = torch.load(path_to_model)
+model.load_state_dict(checkpoint['model_state_dict'])
+classifier_head.load_state_dict(checkpoint['classifier_state_dict'])
+optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+model.eval()
+
+# JOB DESCRIPTION SUMMARY
+descr = read_file(path_to_resumes + 'jd_to_test/jd.pdf')
+descr = GoogleTranslator(source='auto', target='en').translate(descr)
+jd_summary = get_openai_response_for_jd(descr)
+jd_summary = get_openai_response(jd_summary)
+start_idx = jd_summary.index('<response>') + len('<response>')
+end_idx = jd_summary.index('</response>')
+jd_summary = jd_summary[start_idx:end_idx]
+
+# RESUME SUMMARY AND EVALUATION
+path_to_resumes = base_path + 'resumes_to_test'
+for resume_name in os.listdir(path_to_resumes):
+	resume = read_file(path_to_resumes + resume_name)
+	resume = preprocess_resume(resume)
+	resume = GoogleTranslator(source='auto', target='en').translate(resume)
+	summary = get_openai_response(resume)
+    start_idx = summary.index('<response>') + len('<response>')
+    end_idx = summary.index('</response>')
+    summary = summary[start_idx:end_idx]
+
+	sentences = [jd_summary, summary]
+
+	encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
+
+	with torch.no_grad():
+	  model_output = model(**encoded_input)
+
+	sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+
+	tensor1 = sentence_embeddings[0]
+	tensor2 = sentence_embeddings[1]
+
+	cos_sim = F.cosine_similarity(tensor1.unsqueeze(0), tensor2.unsqueeze(0), dim=1)
+	print("Resume is: ", resume_name)
+	score = cos_sim.item()*2
+	if score > 1:
+		score = 1
+	print("Score is:", score*100)
